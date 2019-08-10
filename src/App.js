@@ -11,6 +11,7 @@ class App extends Component {
       email:''
     },
     editEmployeeData : {
+      id:'',
       name:'',
       email:''
     },
@@ -36,12 +37,13 @@ class App extends Component {
 
   addEmployee() {
 
-    axios.post('https://jsonplaceholder.typicode.com/todos',this.state.newEmployeeData).then((response) => {
+    axios.post('http://localhost:8080/employee/',this.state.newEmployeeData).then((response) => {
       let { employees } = this.state;
 
       employees.push(response.data);
     
-      this.setState({ employees,newEmployeeModal:false,newEmployeeData : {
+      this.setState({ employees,newEmployeeModal:false,
+        newEmployeeData : {
         name:'',
         email:''
       } });
@@ -49,33 +51,39 @@ class App extends Component {
   }
 
   updateEmployee() {
-    let { name, email} = this.state.editEmployeeData;
-    axios.put('https://jsonplaceholder.typicode.com/todos' + this.state.editEmployeeData.id , {
-      name,email
+    let { id,name, email} = this.state.editEmployeeData;
+    axios.put('http://localhost:8080/employee/' + this.state.editEmployeeData.id , {
+      id,name,email
     } ).then((response) =>  {
       this._refreshList();
+
+      this.setState({
+        editEmployeeModal:false, 
+        editEmployeeData : { id:'',name:'',email:''}
+      })
+
     });
       
   }
 
   _refreshList(){
-    axios.get('https://jsonplaceholder.typicode.com/todos/1').then((response) => {
+    axios.get('http://localhost:8080/employee/').then((response) => {
       this.setState({
-        //employees : [{'title':'123456','nome':'Felipe','email':'felipe@2far.com.br'}]
-        employees : [response.data]
+        employees : response.data
       })
     });
   }
 
   editEmployee(id,name,email) {
     this.setState({
-      editEmployeeData: { id,name,email}, editEmployeeModal : ! this.editEmployeeModal
+      editEmployeeData:{ id,name,email }
+      , editEmployeeModal : ! this.editEmployeeModal
     });
 
   }
 
-  deleteEmployee() {
-    axios.delete('https://jsonplaceholder.typicode.com/todos' + this.state.editEmployeeData.id).then((response) =>{
+  deleteEmployee(id) {
+    axios.delete('http://localhost:8080/employee/' + id).then((response) =>{
       this._refreshList();
     });
   }
@@ -86,11 +94,11 @@ class App extends Component {
     let employees = this.state.employees.map((e) => {
       return(
         <tr key={e.id}>
-          <td>{e.title}</td>
-          <td>{e.title}</td>
-          <td>{e.title}</td>
+          <td>{e.id}</td>
+          <td>{e.name}</td>
+          <td>{e.email}</td>
           <td>
-            <Button color="success" size="sm" className="mr-2" onClick={this.editEmployee.bind(this,e.name,e.email)}>Edit</Button>
+            <Button color="success" size="sm" className="mr-2" onClick={this.editEmployee.bind(this,e.id,e.name,e.email)}>Edit</Button>
             <Button color="danger" size="sm" onClick={this.deleteEmployee.bind(this,e.id)} >Delete</Button>
           </td>
         </tr>
@@ -166,7 +174,7 @@ class App extends Component {
 
             </ModalBody>
             <ModalFooter>
-              <Button color="primary" onClick={this.updateEmployee.bind(this)}>Save</Button>{' '}
+              <Button color="primary" onClick={this.updateEmployee.bind(this)}>Update Employee</Button>{' '}
               <Button color="secondary" onClick={this.toggleEditEmployee.bind(this)}>Cancel</Button>
             </ModalFooter>
           </Modal>
