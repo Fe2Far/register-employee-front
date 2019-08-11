@@ -89,7 +89,7 @@ class App extends Component {
   _listSectors() {
     axios.get('http://localhost:8080/sector/').then((response) => {
       this.setState({
-        sectors : response.data
+        sectors : response.data.data
       })
     });
   }
@@ -97,7 +97,7 @@ class App extends Component {
   _refreshList(){
     axios.get('http://localhost:8080/employee/').then((response) => {
       this.setState({
-        employees : response.data
+        employees : response.data.data
       })
     });
   }
