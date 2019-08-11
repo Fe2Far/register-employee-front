@@ -6,14 +6,20 @@ class App extends Component {
 
   state = {
     employees:[],
+    sectors:[],
     newEmployeeData : {
       name:'',
-      email:''
+      email:'',
+      sector : {
+        id:'',
+        name:''
+      }
     },
     editEmployeeData : {
       id:'',
       name:'',
-      email:''
+      email:'',
+      sectorId: ''
     },
     newEmployeeModal : false,
     editEmployeeModal : false,
@@ -23,6 +29,7 @@ class App extends Component {
 
   componentWillMount() {
     this._refreshList();
+    this._listSectors();
   }
 
   toggleNewEmployee() {
@@ -45,7 +52,8 @@ class App extends Component {
       this.setState({ employees,newEmployeeModal:false,
         newEmployeeData : {
         name:'',
-        email:''
+        email:'',
+        sector:{ id:'' }
       }});
 
       this._refreshList();
@@ -59,19 +67,31 @@ class App extends Component {
   }
 
   updateEmployee() {
-    let { id,name, email} = this.state.editEmployeeData;
+    let { id,name, email,sectorId } = this.state.editEmployeeData;
     axios.put('http://localhost:8080/employee/' + this.state.editEmployeeData.id , {
-      id,name,email
-    } ).then((response) =>  {
-      this._refreshList();
+      id,name,email,sector:{id:sectorId}} ).then((response) =>  {
 
       this.setState({
         editEmployeeModal:false, 
-        editEmployeeData : { id:'',name:'',email:''}
+        editEmployeeData : { id:'',name:'',email:'',sectorId:''}
       })
 
+      this._refreshList();
+
+    }).catch(error => {
+      this.setState({
+        hasError:true,
+        msgError:error.response.data.errors
+      });
     });
-      
+  }
+
+  _listSectors() {
+    axios.get('http://localhost:8080/sector/').then((response) => {
+      this.setState({
+        sectors : response.data
+      })
+    });
   }
 
   _refreshList(){
@@ -82,9 +102,9 @@ class App extends Component {
     });
   }
 
-  editEmployee(id,name,email) {
+  editEmployee(id,name,email,sectorId) {
     this.setState({
-      editEmployeeData:{ id,name,email }
+      editEmployeeData:{ id,name,email,sectorId }
       , editEmployeeModal : ! this.editEmployeeModal
     });
 
@@ -99,14 +119,21 @@ class App extends Component {
 
   render() {
 
+    let sectors = this.state.sectors.map((s) => {
+      return(
+        <option value={s.id}>{s.name}</option>
+      )
+    });
+
     let employees = this.state.employees.map((e) => {
       return(
         <tr key={e.id}>
           <td>{e.id}</td>
           <td>{e.name}</td>
           <td>{e.email}</td>
+          <td>{e.sector.name}</td>
           <td>
-            <Button color="success" size="sm" className="mr-2" onClick={this.editEmployee.bind(this,e.id,e.name,e.email)}>Edit</Button>
+            <Button color="success" size="sm" className="mr-2" onClick={this.editEmployee.bind(this,e.id,e.name,e.email,e.sector.id)}>Edit</Button>
             <Button color="danger" size="sm" onClick={this.deleteEmployee.bind(this,e.id)} >Delete</Button>
           </td>
         </tr>
@@ -134,6 +161,7 @@ class App extends Component {
                     <th>#</th>
                     <th>Nome</th>
                     <th>Email</th>
+                    <th>Departamento</th>
                     <th>Actions</th>
                   </tr>
               </thead>
@@ -160,6 +188,18 @@ class App extends Component {
                 newEmployeeData.email = e.target.value;
                 this.setState({ newEmployeeData });
               } } />
+
+              <Label for="sector">Departamento</Label>
+              <Input id="sector" type="select" value={this.state.newEmployeeData.sector.id} onChange={(e) => { 
+                let { newEmployeeData } = this.state;
+                newEmployeeData.sector.id = e.target.value;
+                this.setState({ newEmployeeData });
+                console.log(e.target.value);
+              }}>
+                <option value="0">Escolha uma opção</option>
+                {sectors}
+              </Input>
+
             </FormGroup>
 
             </ModalBody>
@@ -188,10 +228,22 @@ class App extends Component {
                 editEmployeeData.email = e.target.value;
                 this.setState({ editEmployeeData });
               } } />
+
+              <Label for="sector">Departamento</Label>
+              <Input id="sector" type="select" value={this.state.editEmployeeData.sectorId} onChange={(e) => { 
+                let { editEmployeeData } = this.state;
+                editEmployeeData.sectorId = e.target.value;
+                this.setState({ editEmployeeData });
+              } }>
+                {sectors}
+              </Input>
+
+
             </FormGroup>
 
             </ModalBody>
             <ModalFooter>
+              <Alert color="danger" style={style}>{msgErrorList}</Alert>
               <Button color="primary" onClick={this.updateEmployee.bind(this)}>Update Employee</Button>{' '}
               <Button color="secondary" onClick={this.toggleEditEmployee.bind(this)}>Cancel</Button>
             </ModalFooter>
