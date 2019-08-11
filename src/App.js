@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import axios from 'axios';
-import { Table,Button,Modal,ModalHeader,ModalFooter,ModalBody,FormGroup,Label,Input } from 'reactstrap';
+import { Table,Button,Modal,ModalHeader,ModalFooter,ModalBody,FormGroup,Label,Input,Alert } from 'reactstrap';
 
 class App extends Component {
 
@@ -16,7 +16,9 @@ class App extends Component {
       email:''
     },
     newEmployeeModal : false,
-    editEmployeeModal : false
+    editEmployeeModal : false,
+    hasError: false,
+    msgError:[]
   }
 
   componentWillMount() {
@@ -36,17 +38,23 @@ class App extends Component {
   }
 
   addEmployee() {
-
     axios.post('http://localhost:8080/employee/',this.state.newEmployeeData).then((response) => {
+
       let { employees } = this.state;
 
-      employees.push(response.data);
-    
       this.setState({ employees,newEmployeeModal:false,
         newEmployeeData : {
         name:'',
         email:''
-      } });
+      }});
+
+      this._refreshList();
+
+    }).catch(error => {
+      this.setState({
+        hasError:true,
+        msgError:error.response.data.errors
+      });
     });
   }
 
@@ -104,10 +112,21 @@ class App extends Component {
         </tr>
       )
     });
+
+    const style = this.state.hasError?{ }:{display: 'none'};
+    let msgErrorList = this.state.msgError.map((e) =>{
+      return(
+        <p> {e.fieldName} : {e.message} </p>
+      )
+    });
     
 
     return (
       <div className="App container">
+
+          <h2 className="my-5">Employees Register</h2>
+
+          <Button className="my-3" color="primary" onClick={this.toggleNewEmployee.bind(this)}>Add Employee</Button>
 
           <Table>
               <thead>
@@ -123,12 +142,10 @@ class App extends Component {
               </tbody>
           </Table>
 
-          <Button color="primary" onClick={this.toggleNewEmployee.bind(this)}>Add Employee</Button>
-          
           <Modal isOpen={this.state.newEmployeeModal} toggle={this.toggleNewEmployee.bind(this)} className={this.props.className}>
             <ModalHeader toggle={this.toggleNewEmployee.bind(this)}>Add New Employee</ModalHeader>
             <ModalBody>
-              
+            
             <FormGroup>
               <Label for="name">Name</Label>
               <Input id="name" type="text" value={this.state.newEmployeeData.name} onChange={(e) => { 
@@ -147,6 +164,7 @@ class App extends Component {
 
             </ModalBody>
             <ModalFooter>
+              <Alert color="danger" style={style}>{msgErrorList}</Alert>
               <Button color="primary" onClick={this.addEmployee.bind(this)}>Save</Button>{' '}
               <Button color="secondary" onClick={this.toggleNewEmployee.bind(this)}>Cancel</Button>
             </ModalFooter>
